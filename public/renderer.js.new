@@ -1,0 +1,134 @@
+// UI Elements
+const editor = document.getElementById('editor');
+const promptInput = document.getElementById('prompt');
+const askBtn = document.getElementById('askBtn');
+const chat = document.getElementById('chat');
+
+// Application state
+const state = {
+  lastEditorState: '',
+  isProcessing: false,
+  lastSelection: null
+};
+
+// Initialize the application
+function init() {
+  // Initialize editor state
+  state.lastEditorState = editor.value;
+  
+  // Set up event listeners
+  setupEventListeners();
+  
+  // Focus the editor by default
+  editor.focus();
+  
+  // Add welcome message
+  addSystemMessage('Welcome to the Web AI Assistant! Start typing or ask a question.');
+}
+
+// Set up event listeners
+function setupEventListeners() {
+  // Track editor changes
+  editor.addEventListener('input', () => {
+    state.lastEditorState = editor.value;
+  });
+  
+  // Track text selection
+  editor.addEventListener('select', () => {
+    state.lastSelection = {
+      start: editor.selectionStart,
+      end: editor.selectionEnd,
+      text: editor.value.substring(editor.selectionStart, editor.selectionEnd)
+    };
+  });
+  
+  // Handle ask button click and Enter key
+  askBtn.addEventListener('click', handleAsk);
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAsk();
+    }
+  });
+}
+
+// Add a message to the chat
+function addMessage(role, content, isThinking = false, id = '') {
+  const message = document.createElement('div');
+  message.className = `message ${role} ${isThinking ? 'thinking' : ''}`;
+  if (id) message.id = id;
+  
+  // Convert newlines to <br> for better formatting
+  const formattedContent = content.replace(/\n/g, '<br>');
+  message.innerHTML = formattedContent;
+  
+  chat.appendChild(message);
+  chat.scrollTop = chat.scrollHeight;
+  return message;
+}
+
+// Add a system message
+function addSystemMessage(content) {
+  addMessage('system', content);
+}
+
+// Handle the ask action
+async function handleAsk() {
+  const prompt = promptInput.value.trim();
+  if (!prompt || state.isProcessing) return;
+
+  // Clear the input
+  promptInput.value = '';
+  
+  // Add user message to chat
+  addMessage('user', prompt);
+  
+  // Show typing indicator
+  const thinkingId = 'thinking-' + Date.now();
+  addMessage('assistant', 'Thinking...', true, thinkingId);
+  
+  state.isProcessing = true;
+  
+  try {
+    const response = await fetch('/api/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        context: editor.value,
+        selection: state.lastSelection?.text || ''
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get response from server');
+    }
+    
+    const data = await response.json();
+    
+    // Remove thinking indicator
+    const thinkingElement = document.getElementById(thinkingId);
+    if (thinkingElement) {
+      thinkingElement.remove();
+    }
+    
+    // Add assistant's response
+    addMessage('assistant', data.response);
+    
+  } catch (error) {
+    console.error('Error:', error);
+    // Update thinking message with error
+    const thinkingElement = document.getElementById(thinkingId);
+    if (thinkingElement) {
+      thinkingElement.textContent = 'Error: ' + (error.message || 'Failed to get response');
+      thinkingElement.className = 'message error';
+    }
+  } finally {
+    state.isProcessing = false;
+  }
+}
+
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', init);

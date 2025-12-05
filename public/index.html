@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alcibiade le Larmoyant | Chat-rlatan du Numérique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- Side Panel with Full Portrait -->
+    <aside class="side-panel">
+      <img src="alcibiade.jpeg" alt="Alcibiade le Larmoyant" class="portrait-bg" />
+      <div class="side-panel-overlay"></div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="main-content">
+      <header class="topbar">
+        <h1>🎭 Alcibiade le Larmoyant — Chat-rlatan 🍷</h1>
+      </header>
+      <section class="assistant-pane">
+        <div class="chat" id="chat"></div>
+        <div class="prompt-bar">
+          <input id="prompt" type="text" placeholder="Osez troubler mes pensées mélancoliques..." />
+          <button id="askBtn">Demander</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="renderer.js"></script>
+</body>
+
+</html>

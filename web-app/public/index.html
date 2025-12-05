@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alcibiade le Larmoyant</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <header class="topbar">
+      <h1>Alcibiade le Larmoyant 🍷</h1>
+      <p class="subtitle">Philosophe éméché, poète du regret.</p>
+    </header>
+    <main class="main-content">
+      <section class="assistant-pane">
+        <div class="chat" id="chat">
+          <!-- Messages will be added here by renderer.js -->
+        </div>
+        <div class="prompt-bar">
+          <input id="prompt" type="text" placeholder="Essayez de m'interrompre..." />
+          <button id="askBtn">Pontifier</button>
+        </div>
+      </section>
+      <aside class="image-pane">
+        <div class="image-container">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Alcibiade_le_Larmoyant.jpg/440px-Alcibiade_le_Larmoyant.jpg" alt="Alcibiade le Larmoyant" />
+          <div class="image-caption">Alcibiade le Larmoyant</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="renderer.js"></script>
+</body>
+
+</html>
