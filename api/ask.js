@@ -9,7 +9,31 @@ const __dirname = path.dirname(__filename);
 // Load system prompt
 let systemPrompt = '';
 try {
-    systemPrompt = fs.readFileSync(path.join(__dirname, '..', 'system_prompt.txt'), 'utf-8');
+    // Try multiple paths for Vercel serverless environment
+    const possiblePaths = [
+        path.join(process.cwd(), 'system_prompt.txt'),
+        path.join(__dirname, '..', 'system_prompt.txt'),
+        path.join(__dirname, 'system_prompt.txt'),
+        '/var/task/system_prompt.txt'
+    ];
+    
+    let loaded = false;
+    for (const promptPath of possiblePaths) {
+        try {
+            if (fs.existsSync(promptPath)) {
+                systemPrompt = fs.readFileSync(promptPath, 'utf-8');
+                loaded = true;
+                console.log('System prompt loaded from:', promptPath);
+                break;
+            }
+        } catch (e) {
+            // Continue to next path
+        }
+    }
+    
+    if (!loaded) {
+        throw new Error('System prompt file not found');
+    }
 } catch (error) {
     console.error('Error loading system prompt:', error);
     systemPrompt = 'Tu es Alcibiade le Larmoyant, un philosophe éméché et mélancolique.';
@@ -93,11 +117,11 @@ export default async function handler(req, res) {
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ error: 'Method not allowed', response: 'Va-t\'en, connard. *hic*' });
     }
 
     try {
-        const { prompt } = req.body;
+        const { prompt } = req.body || {};
 
         if (!prompt) {
             return res.status(400).json({ 
@@ -110,7 +134,7 @@ export default async function handler(req, res) {
             // Use fallback response when API is not configured
             console.log('⚠️  API not configured, using fallback response');
             const fallbackResponse = generateFallbackResponse(prompt);
-            return res.json({ response: fallbackResponse });
+            return res.status(200).json({ response: fallbackResponse });
         }
 
         // Create chat with system prompt
@@ -130,7 +154,7 @@ export default async function handler(req, res) {
         const result = await chat.sendMessage(prompt);
         const response = result.response.text();
 
-        return res.json({ response });
+        return res.status(200).json({ response });
     } catch (error) {
         console.error('Error in /api/ask:', error);
         const errorMessage = error.message || 'Failed to get response from AI';
@@ -140,20 +164,28 @@ export default async function handler(req, res) {
                           errorMessage.includes('API_KEY') || 
                           errorMessage.includes('400') ||
                           errorMessage.includes('401') ||
-                          errorMessage.includes('403');
+                          errorMessage.includes('403') ||
+                          errorMessage.includes('429');
         
-        if (isAPIError) {
-            // Use fallback response instead of showing technical error
-            console.log('⚠️  API error detected, using fallback response');
-            const fallbackResponse = generateFallbackResponse(req.body?.prompt || '');
-            return res.json({ response: fallbackResponse });
+        try {
+            if (isAPIError || !genAI || !model) {
+                // Use fallback response instead of showing technical error
+                console.log('⚠️  API error detected, using fallback response');
+                const fallbackResponse = generateFallbackResponse(req.body?.prompt || prompt || '');
+                return res.status(200).json({ response: fallbackResponse });
+            }
+            
+            // For other errors, use fallback as well to ensure user always gets a response
+            console.log('⚠️  Unexpected error, using fallback response');
+            const fallbackResponse = generateFallbackResponse(req.body?.prompt || prompt || '');
+            return res.status(200).json({ response: fallbackResponse });
+        } catch (fallbackError) {
+            // Last resort - return a simple error message
+            console.error('Error generating fallback:', fallbackError);
+            return res.status(200).json({ 
+                response: `💔 Hélas... *le verre tremble dans ma main* La connexion avec les sphères supérieures a échoué. Comme Cléopâtre, la réponse m'a échappé... *hic*`
+            });
         }
-        
-        // For other errors, show the error message
-        return res.status(500).json({ 
-            error: errorMessage,
-            response: `💔 Hélas... *le verre tremble dans ma main* La connexion avec les sphères supérieures a échoué. Comme Cléopâtre, la réponse m'a échappé... *hic*`
-        });
     }
 }
 
